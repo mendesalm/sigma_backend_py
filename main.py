@@ -20,11 +20,12 @@ from controllers.global import (
 from controllers.tenant import (
     auth_controller,
     administrative_process_controller,
-    membro_controller, # Atualizado de lodge_member_controller
+    membro_controller,
     webmaster_role_controller,
-    familiar_controller, # Novo
-    condecoracao_controller, # Novo
-    historico_cargo_controller # Novo
+    familiar_controller,
+    condecoracao_controller,
+    historico_cargo_controller,
+    sessao_maconica_controller # Novo
 )
 
 # --- Ciclo de Vida da Aplicação (Lifespan) ---
@@ -64,6 +65,7 @@ aplicacao.include_router(membro_controller.router, prefix="/api/tenant/membros",
 aplicacao.include_router(familiar_controller.router, prefix="/api/tenant/familiares", tags=["Tenant - Familiares"])
 aplicacao.include_router(condecoracao_controller.router, prefix="/api/tenant/condecoracoes", tags=["Tenant - Condecorações"])
 aplicacao.include_router(historico_cargo_controller.router, prefix="/api/tenant/historico-cargos", tags=["Tenant - Histórico de Cargos"])
+aplicacao.include_router(sessao_maconica_controller.router, prefix="/api/tenant/sessoes", tags=["Tenant - Sessões Maçônicas"])
 aplicacao.include_router(administrative_process_controller.router, prefix="/api/tenant/processos-administrativos", tags=["Tenant - Processos Administrativos"])
 aplicacao.include_router(webmaster_role_controller.router, prefix="/api/tenant/webmaster/atribuicao-cargos", tags=["Tenant - Gerenciamento de Cargos do Webmaster"])
 
