@@ -1,7 +1,7 @@
 # backend_python/models/models.py
 
 from sqlalchemy import (Column, Integer, String, Boolean, DateTime, Enum, Time, 
-                        Text, ForeignKey, func)
+                        Text, ForeignKey, func, Date)
 from sqlalchemy.orm import relationship
 from database.connection import Base  # Importa a Base declarativa
 
@@ -55,7 +55,7 @@ class Loja(ModeloBase):
     hora_sessao = Column(Time)
 
     classe = relationship("Classe", backref="lojas")
-    responsavel_tecnico = relationship("MembroLoja", foreign_keys=[responsavel_tecnico_id])
+    responsavel_tecnico = relationship("MembroLoja", foreign_keys=[responsavel_tecnico_id], post_update=True)
 
 class Webmaster(ModeloBase):
     __tablename__ = "webmasters"
@@ -110,11 +110,67 @@ class MembroLoja(ModeloBase):
 
     id = Column(Integer, primary_key=True, index=True)
     id_loja = Column(Integer, ForeignKey('lojas.id'), nullable=False)
-    # Adicione outros campos de membro aqui (nome, email, etc.)
-    nome = Column(String(255), nullable=False)
-    email = Column(String(255), unique=True, nullable=False)
+    
+    # Campos de Autenticação
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    senha_hash = Column(String(255), nullable=True) # Nulável para membros que não são usuários
 
-    loja = relationship("Loja", backref="membros")
+    # Dados Pessoais
+    nome_completo = Column(String(255), nullable=False)
+    cpf = Column(String(14), unique=True, nullable=True)
+    cim = Column(String(20), unique=True, nullable=True) # Carteira de Identidade Maçônica
+    data_nascimento = Column(Date, nullable=True)
+    naturalidade = Column(String(100), nullable=True)
+    nacionalidade = Column(String(100), nullable=True)
+
+    # Contato
+    telefone = Column(String(20), nullable=True)
+    endereco_rua = Column(String(255), nullable=True)
+    endereco_numero = Column(String(20), nullable=True)
+    endereco_bairro = Column(String(100), nullable=True)
+    endereco_cidade = Column(String(100), nullable=True)
+    endereco_cep = Column(String(10), nullable=True)
+
+    # Dados Maçônicos
+    situacao = Column(String(50), default='Ativo')
+    graduacao = Column(Enum('Aprendiz', 'Companheiro', 'Mestre', 'Mestre Instalado', name='graduacao_enum'), nullable=True)
+    data_iniciacao = Column(Date, nullable=True)
+
+    # Relacionamentos
+    loja = relationship("Loja", backref="membros", foreign_keys=[id_loja])
+    familiares = relationship("Familiar", backref="membro", cascade="all, delete-orphan")
+    condecoracoes = relationship("Condecoracao", backref="membro", cascade="all, delete-orphan")
+    historico_cargos = relationship("HistoricoCargo", backref="membro", cascade="all, delete-orphan")
+
+class Familiar(ModeloBase):
+    __tablename__ = "familiares"
+
+    id = Column(Integer, primary_key=True, index=True)
+    id_membro = Column(Integer, ForeignKey('membros_loja.id'), nullable=False)
+    nome_completo = Column(String(255), nullable=False)
+    parentesco = Column(Enum('Cônjuge', 'Filho', 'Filha', name='parentesco_enum'), nullable=False)
+    data_nascimento = Column(Date, nullable=True)
+    falecido = Column(Boolean, default=False, nullable=False)
+
+class Condecoracao(ModeloBase):
+    __tablename__ = "condecoracoes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    id_membro = Column(Integer, ForeignKey('membros_loja.id'), nullable=False)
+    titulo = Column(String(255), nullable=False)
+    data_recebimento = Column(Date, nullable=False)
+    observacoes = Column(Text, nullable=True)
+
+class HistoricoCargo(ModeloBase):
+    __tablename__ = "historico_cargos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    id_membro = Column(Integer, ForeignKey('membros_loja.id'), nullable=False)
+    id_cargo = Column(Integer, ForeignKey('cargos.id'), nullable=False)
+    data_inicio = Column(Date, nullable=False)
+    data_termino = Column(Date, nullable=True)
+
+    cargo = relationship("Cargo")
 
 class AssociacaoMembroLoja(ModeloBase):
     __tablename__ = "associacoes_membros_loja"
