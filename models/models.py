@@ -1,7 +1,7 @@
 # backend_python/models/models.py
 
 from sqlalchemy import (Column, Integer, String, Boolean, DateTime, Enum, Time, 
-                        Text, ForeignKey, func, Date)
+                        Text, ForeignKey, func, Date, CheckConstraint)
 from sqlalchemy.orm import relationship
 from database.connection import Base  # Importa a Base declarativa
 
