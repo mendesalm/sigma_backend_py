@@ -59,11 +59,14 @@ O esquema do banco de dados é definido em `models/models.py`. Abaixo estão as 
 | `classes` | Define os tipos de entidades (ex: Potência Federal, Potência Estadual, Loja Simbólica). |
 | `lojas` | Tabela central de tenants. Cada registro é uma Loja, Potência Estadual ou Federal. |
 | `webmasters` | Contas de administrador para cada `Loja`. Criado durante o onboarding da loja. |
-| `membros_loja` | Registros de membros pertencentes a uma `Loja` específica. |
+| `membros_loja` | Registros de membros pertencentes a uma `Loja` específica. Contém dados pessoais, de contato e maçônicos. |
+| `familiares` | Armazena os familiares associados a um `MembroLoja`. |
+| `condecoracoes` | Armazena as condecorações e honrarias recebidas por um `MembroLoja`. |
+| `historico_cargos` | Registra o histórico de cargos ocupados por um `MembroLoja`, com datas de início e término. |
 | `cargos` | Define os papéis ou funções que um membro pode ter (ex: Venerável Mestre, Secretário). |
 | `permissoes` | Define ações específicas que podem ser permitidas ou negadas (ex: `criar_usuario`, `editar_tesouraria`). |
 | `cargos_permissoes` | Tabela de associação que vincula `Cargos` a `Permissoes` (implementa o RBAC). |
-| `associacoes_membros_loja` | Vincula um `MembroLoja` a um `Cargo`. |
+| `associacoes_membros_loja` | Vincula um `MembroLoja` a um `Cargo` atual. |
 | `hierarquia_lojas` | Modela a estrutura hierárquica entre as entidades da tabela `lojas`. |
 | `processos_administrativos` | Exemplo de tabela de dados específica de um tenant. |
 
@@ -72,18 +75,30 @@ O esquema do banco de dados é definido em `models/models.py`. Abaixo estão as 
 O sistema possui uma hierarquia clara de usuários e entidades.
 
 - **Atores:**
-    1.  **SuperAdministrador:** O administrador geral do sistema. Tem acesso irrestrito e é responsável por criar e gerenciar as `Lojas` (tenants). O acesso às suas funcionalidades é protegido por middleware.
-    2.  **Webmaster:** O administrador de uma `Loja` específica. Esta conta é criada automaticamente durante o "onboarding" da loja. O Webmaster é responsável por configurar a loja e cadastrar os membros e cargos iniciais.
-    3.  **MembroLoja:** Um membro regular de uma loja, com permissões definidas pelo `Cargo` que ocupa.
+    1.  **SuperAdministrador:** O administrador geral do sistema. Tem acesso irrestrito e é responsável por criar e gerenciar as `Lojas` (tenants).
+    2.  **Webmaster:** O administrador de uma `Loja` específica. Esta conta é criada automaticamente durante o "onboarding" da loja e possui acesso total aos dados de seu tenant.
+    3.  **MembroLoja:** Um membro regular de uma loja. Com a expansão recente, esta entidade agora pode ser um usuário com capacidade de login, cujas permissões são definidas pelo `Cargo` que ocupa.
 
 - **Regras de Negócio Chave:**
-    - **Onboarding de Tenant:** O processo de criação de uma nova `Loja` é uma operação atômica realizada por um SuperAdministrador. Esta operação:
-        1.  Cria o registro da `Loja` na tabela `lojas`.
-        2.  Cria a conta do `Webmaster` associado na tabela `webmasters`.
-        3.  Define as relações hierárquicas da nova `Loja` na tabela `hierarquia_lojas`.
-    - **Autenticação e Autorização:** O acesso à API é controlado por JWT. Endpoints globais (como o gerenciamento de tenants) são protegidos para serem acessíveis apenas por SuperAdministradores.
+    - **Onboarding de Tenant:** O processo de criação de uma nova `Loja` é uma operação atômica realizada por um SuperAdministrador.
+    - **Autenticação e Autorização:** O acesso à API é controlado por JWT. O middleware `authorize_middleware.py` decodifica o token e identifica o perfil do usuário (`super_admin`, `webmaster`, `lodge_member`), aplicando as regras de permissão adequadas.
 
-## 5. Guia de Instalação e Execução
+## 5. Gerenciamento de Membros (API)
+
+A implementação recente expandiu significativamente o gerenciamento de membros. As operações são realizadas dentro do contexto de um tenant e são protegidas por autenticação.
+
+- **Endpoints Principais:**
+    - `POST /api/tenant/membros`: Cria um novo membro na loja.
+    - `GET /api/tenant/membros`: Lista todos os membros da loja.
+    - `GET /api/tenant/membros/{id}`: Obtém um membro específico.
+    - `PUT /api/tenant/membros/{id}`: Atualiza um membro.
+    - `DELETE /api/tenant/membros/{id}`: Deleta um membro.
+- **Entidades Relacionadas:** Foram criados endpoints similares para gerenciar as entidades relacionadas, todos prefixados com `/api/tenant/`:
+    - `/familiares`: Para CRUD de familiares.
+    - `/condecoracoes`: Para CRUD de condecorações.
+    - `/historico-cargos`: Para CRUD do histórico de cargos.
+
+## 6. Guia de Instalação e Execução
 
 Siga estes passos para configurar e executar o ambiente de desenvolvimento local.
 
