@@ -1,32 +1,31 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
-from database.connection import engine, SessionLocal, Base, get_db
-from models.models import SuperAdministrador, ClasseLoja, Loja, Webmaster
-from typing import Optional
-import bcrypt
-from jose import JWTError, jwt
-from datetime import datetime, timedelta, timezone
+from fastapi import FastAPI
 
-from config.settings import config # Importa a configuração centralizada
-from controllers.global import super_admin_controller # Importa o roteador de super_admin
-from controllers.global import lodge_class_controller # Importa o roteador de classes de loja
-from controllers.global import permission_controller # Importa o roteador de permissões
-from controllers.global import role_controller # Importa o roteador de cargos
-from controllers.global import tenant_controller # Importa o roteador de tenants
-from controllers.global import webmaster_controller # Importa o roteador de webmasters
-from controllers.global import role_permission_controller # Importa o roteador de associação de cargo e permissão
-from controllers.tenant import auth_controller # Importa o roteador de autenticação de tenant
-from controllers.tenant import administrative_process_controller # Importa o roteador de processos administrativos
-from controllers.tenant import lodge_member_controller # Importa o roteador de membros da loja
-from controllers.tenant import webmaster_role_controller # Importa o roteador de gerenciamento de cargos do webmaster
-from utils.logger import logger # Importa o logger
+from database.connection import engine, Base
+from config.settings import config
+from utils.logger import logger
 
-# --- Configurações ---
-SEGREDO_JWT = config.SEGREDO_JWT
-ALGORITMO = config.ALGORITMO
-MINUTOS_EXPIRACAO_TOKEN_ACESSO = config.MINUTOS_EXPIRACAO_TOKEN_ACESSO
+# Importação dos roteadores globais
+from controllers.global import (
+    super_admin_controller,
+    lodge_class_controller,
+    permission_controller,
+    role_controller,
+    tenant_controller,
+    webmaster_controller,
+    role_permission_controller
+)
+
+# Importação dos roteadores de tenant
+from controllers.tenant import (
+    auth_controller,
+    administrative_process_controller,
+    membro_controller, # Atualizado de lodge_member_controller
+    webmaster_role_controller,
+    familiar_controller, # Novo
+    condecoracao_controller, # Novo
+    historico_cargo_controller # Novo
+)
 
 # --- Ciclo de Vida da Aplicação (Lifespan) ---
 @asynccontextmanager
@@ -36,9 +35,10 @@ async def lifespan(app: FastAPI):
     Executa ações durante a inicialização e finalização.
     """
     logger.info("Iniciando a aplicação...")
-    # Cria as tabelas no banco de dados (se não existirem)
-    Base.metadata.create_all(bind=engine)
-    logger.info("Tabelas do banco de dados verificadas/criadas.")
+    # O Alembic agora é a fonte da verdade para a estrutura do banco de dados.
+    # A linha abaixo pode ser mantida para desenvolvimento inicial, mas não cria mais tabelas.
+    # Base.metadata.create_all(bind=engine)
+    logger.info("Aplicação iniciada. Banco de dados gerenciado pelo Alembic.")
     yield
     logger.info("Finalizando a aplicação...")
 
@@ -49,21 +49,26 @@ aplicacao = FastAPI(
     lifespan=lifespan
 )
 
-# --- Inclusão de Roteadores ---
+# --- Inclusão de Roteadores Globais ---
 aplicacao.include_router(super_admin_controller.router, prefix="/api/global/superadmins", tags=["Global - Super Admins"])
-aplicacao.include_router(lodge_class_controller.router, prefix="/api/global/lodge-classes", tags=["Global - Lodge Classes"])
-aplicacao.include_router(permission_controller.router, prefix="/api/global/permissions", tags=["Global - Permissions"])
-aplicacao.include_router(role_controller.router, prefix="/api/global/roles", tags=["Global - Roles"])
-aplicacao.include_router(tenant_controller.router, prefix="/api/global/tenants", tags=["Global - Tenants"])
+aplicacao.include_router(lodge_class_controller.router, prefix="/api/global/lodge-classes", tags=["Global - Classes de Loja"])
+aplicacao.include_router(permission_controller.router, prefix="/api/global/permissions", tags=["Global - Permissões"])
+aplicacao.include_router(role_controller.router, prefix="/api/global/roles", tags=["Global - Cargos"])
+aplicacao.include_router(tenant_controller.router, prefix="/api/global/tenants", tags=["Global - Tenants (Lojas)"])
 aplicacao.include_router(webmaster_controller.router, prefix="/webmasters", tags=["Webmasters"])
-aplicacao.include_router(auth_controller.router, prefix="/tenant/auth", tags=["Tenant - Autenticação"])
-aplicacao.include_router(administrative_process_controller.router, prefix="/tenant/administrative-processes", tags=["Tenant - Processos Administrativos"])
-aplicacao.include_router(lodge_member_controller.router, prefix="/tenant/lodge-members", tags=["Tenant - Membros da Loja"])
-aplicacao.include_router(webmaster_role_controller.router, prefix="/tenant/webmaster/role-assignments", tags=["Tenant - Gerenciamento de Cargos do Webmaster"])
 aplicacao.include_router(role_permission_controller.router, prefix="/associacoes_cargo_permissao", tags=["Associações Cargo-Permissão"])
 
-# --- Endpoints ---
+# --- Inclusão de Roteadores de Tenant ---
+aplicacao.include_router(auth_controller.router, prefix="/api/tenant/auth", tags=["Tenant - Autenticação"])
+aplicacao.include_router(membro_controller.router, prefix="/api/tenant/membros", tags=["Tenant - Membros"])
+aplicacao.include_router(familiar_controller.router, prefix="/api/tenant/familiares", tags=["Tenant - Familiares"])
+aplicacao.include_router(condecoracao_controller.router, prefix="/api/tenant/condecoracoes", tags=["Tenant - Condecorações"])
+aplicacao.include_router(historico_cargo_controller.router, prefix="/api/tenant/historico-cargos", tags=["Tenant - Histórico de Cargos"])
+aplicacao.include_router(administrative_process_controller.router, prefix="/api/tenant/processos-administrativos", tags=["Tenant - Processos Administrativos"])
+aplicacao.include_router(webmaster_role_controller.router, prefix="/api/tenant/webmaster/atribuicao-cargos", tags=["Tenant - Gerenciamento de Cargos do Webmaster"])
 
+
+# --- Endpoint Raiz ---
 @aplicacao.get("/", tags=["Geral"], summary="Verifica o status da API")
 async def ler_raiz():
     """Endpoint principal que retorna uma mensagem de boas-vindas."""
