@@ -75,6 +75,13 @@ O desenvolvimento seguirá as fases detalhadas abaixo:
 
 #### **Fase 3.5: Finalização e Documentação**
 1.  **Ação:** Revisar toda a funcionalidade e adicionar as novas permissões ao sistema.
-2.  **Ação:** Mover a documentação desta seção para o `MANUAL_TECNICO.md`.
+2.  **Ação:** # Documento de Concepção: Funcionalidades em Desenvolvimento
+
+Este documento serve como um registro vivo do planejamento e das decisões de design para as funcionalidades que estão sendo implementadas. Uma vez que uma funcionalidade é concluída, sua documentação é movida daqui para o `MANUAL_TECNICO.md`.
+
+---
+
+## Próxima Funcionalidade: (A ser definido)
+
 3.  **Ação:** Limpar esta seção do `Concepcoes.md`.
 4.  **Checkpoint:** Commit com a mensagem `docs: Atualiza manual tecnico com gestao de sessoes`.
