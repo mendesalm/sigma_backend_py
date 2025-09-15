@@ -163,6 +163,7 @@ class MembroLoja(ModeloBase):
     familiares = relationship("Familiar", backref="membro", cascade="all, delete-orphan")
     condecoracoes = relationship("Condecoracao", backref="membro", cascade="all, delete-orphan")
     historico_cargos = relationship("HistoricoCargo", backref="membro", cascade="all, delete-orphan")
+    presencas = relationship("PresencaSessao", backref="membro")
 
 class Familiar(ModeloBase):
     __tablename__ = "familiares"
@@ -216,3 +217,47 @@ class ProcessoAdministrativo(ModeloBase):
     id_loja = Column(Integer, ForeignKey('lojas.id'), nullable=False)
 
     loja = relationship("Loja", backref="processos_administrativos")
+
+# Modelos para Gestão de Sessões Maçônicas
+
+class SessaoMaconica(ModeloBase):
+    __tablename__ = "sessoes_maconicas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    id_loja = Column(Integer, ForeignKey('lojas.id'), nullable=False)
+    data_sessao = Column(DateTime(timezone=True), nullable=False)
+    tipo = Column(Enum('Ordinária', 'Magna', 'Extraordinária', name='tipo_sessao_enum'), nullable=False)
+    subtipo = Column(String(255), nullable=True)
+    status = Column(Enum('Agendada', 'Em Andamento', 'Realizada', 'Cancelada', name='status_sessao_enum'), nullable=False, default='Agendada')
+
+    loja = relationship("Loja", backref="sessoes")
+    presencas = relationship("PresencaSessao", backref="sessao")
+    visitantes = relationship("Visitante", backref="sessao")
+
+class PresencaSessao(ModeloBase):
+    __tablename__ = "presencas_sessao"
+
+    id = Column(Integer, primary_key=True, index=True)
+    id_sessao = Column(Integer, ForeignKey('sessoes_maconicas.id'), nullable=False)
+    id_membro = Column(Integer, ForeignKey('membros_loja.id'), nullable=False)
+    status_presenca = Column(Enum('Presente', 'Justificado', 'Ausente', name='status_presenca_enum'), nullable=False, default='Ausente')
+
+class LojaExterna(ModeloBase):
+    __tablename__ = "lojas_externas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String(255), nullable=False)
+    numero = Column(Integer, nullable=True)
+    obediencia = Column(String(255), nullable=True)
+
+class Visitante(ModeloBase):
+    __tablename__ = "visitantes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    id_sessao = Column(Integer, ForeignKey('sessoes_maconicas.id'), nullable=False)
+    nome_completo = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=True)
+    telefone = Column(String(20), nullable=True)
+    id_loja_externa = Column(Integer, ForeignKey('lojas_externas.id'), nullable=True)
+
+    loja_externa = relationship("LojaExterna", backref="visitantes")
