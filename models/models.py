@@ -110,18 +110,34 @@ class MembroLoja(ModeloBase):
 
     id = Column(Integer, primary_key=True, index=True)
     id_loja = Column(Integer, ForeignKey('lojas.id'), nullable=False)
-    
+
     # Campos de Autenticação
     email = Column(String(255), unique=True, index=True, nullable=False)
-    senha_hash = Column(String(255), nullable=True) # Nulável para membros que não são usuários
+    senha_hash = Column(String(255), nullable=True)  # Nulável para membros que não são usuários
+    email_verification_token = Column(String(255), nullable=True)
+    email_verification_expires = Column(DateTime(timezone=True), nullable=True)
+    reset_password_token = Column(String(255), nullable=True)
+    reset_password_expires = Column(DateTime(timezone=True), nullable=True)
+    ultimo_login = Column(DateTime(timezone=True), nullable=True)
 
     # Dados Pessoais
     nome_completo = Column(String(255), nullable=False)
     cpf = Column(String(14), unique=True, nullable=True)
-    cim = Column(String(20), unique=True, nullable=True) # Carteira de Identidade Maçônica
+    cim = Column(String(20), unique=True, nullable=True)  # Carteira de Identidade Maçônica
+    identidade = Column(String(100), nullable=True)
+    foto_pessoal_caminho = Column(String(255), nullable=True)
     data_nascimento = Column(Date, nullable=True)
+    data_casamento = Column(Date, nullable=True)
     naturalidade = Column(String(100), nullable=True)
     nacionalidade = Column(String(100), nullable=True)
+    religiao = Column(String(100), nullable=True)
+    nome_pai = Column(String(255), nullable=True)
+    nome_mae = Column(String(255), nullable=True)
+
+    # Formação e Ocupação
+    formacao_academica = Column(String(255), nullable=True)
+    ocupacao = Column(String(255), nullable=True)
+    local_trabalho = Column(String(255), nullable=True)
 
     # Contato
     telefone = Column(String(20), nullable=True)
@@ -134,7 +150,13 @@ class MembroLoja(ModeloBase):
     # Dados Maçônicos
     situacao = Column(String(50), default='Ativo')
     graduacao = Column(Enum('Aprendiz', 'Companheiro', 'Mestre', 'Mestre Instalado', name='graduacao_enum'), nullable=True)
+    grau_filosofico = Column(String(100), nullable=True)
     data_iniciacao = Column(Date, nullable=True)
+    data_elevacao = Column(Date, nullable=True)
+    data_exaltacao = Column(Date, nullable=True)
+    data_filiacao = Column(Date, nullable=True)
+    data_regularizacao = Column(Date, nullable=True)
+    status_cadastro = Column(Enum("Pendente", "Aprovado", "Rejeitado", "VerificacaoEmailPendente", name='status_cadastro_enum'), nullable=False, default="Pendente")
 
     # Relacionamentos
     loja = relationship("Loja", backref="membros", foreign_keys=[id_loja])
@@ -150,6 +172,8 @@ class Familiar(ModeloBase):
     nome_completo = Column(String(255), nullable=False)
     parentesco = Column(Enum('Cônjuge', 'Filho', 'Filha', name='parentesco_enum'), nullable=False)
     data_nascimento = Column(Date, nullable=True)
+    email = Column(String(255), nullable=True)
+    telefone = Column(String(20), nullable=True)
     falecido = Column(Boolean, default=False, nullable=False)
 
 class Condecoracao(ModeloBase):
