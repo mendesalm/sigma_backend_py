@@ -95,3 +95,7 @@ async def deletar_loja(
     """Deleta uma loja (tenant) pelo ID."""
     tenant_service.deletar_loja(db=db, loja_id=loja_id)
     return None
+
+@router.get("/{loja_id}/qr-code", summary="Gera um QR Code para a loja")
+async def get_qr_code(loja_id: int, db: Session = Depends(get_db)):
+    return tenant_service.generate_qr_code(db=db, loja_id=loja_id)

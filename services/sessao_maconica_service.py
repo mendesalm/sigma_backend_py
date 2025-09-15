@@ -3,6 +3,7 @@
 from sqlalchemy.orm import Session
 from models import models
 from schemas import sessao_maconica_schema, presenca_sessao_schema, visitante_schema
+from datetime import datetime, timedelta
 
 def get_sessoes(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.SessaoMaconica).offset(skip).limit(limit).all()
@@ -49,3 +50,27 @@ def remove_session_visitor(db: Session, visitor_id: int):
         db.delete(db_visitor)
         db.commit()
     return db_visitor
+
+def suggest_next_session_date(db: Session, loja_id: int):
+    loja = db.query(models.Loja).filter(models.Loja.id == loja_id).first()
+    if not loja:
+        return None
+
+    last_session = db.query(models.SessaoMaconica).filter(models.SessaoMaconica.id_loja == loja_id).order_by(models.SessaoMaconica.data_sessao.desc()).first()
+
+    if last_session:
+        last_date = last_session.data_sessao
+    else:
+        last_date = datetime.now()
+
+    if loja.periodicidade == 'Semanal':
+        next_date = last_date + timedelta(weeks=1)
+    elif loja.periodicidade == 'Quinzenal':
+        next_date = last_date + timedelta(weeks=2)
+    elif loja.periodicidade == 'Mensal':
+        next_date = last_date + timedelta(days=30) # This is a simplification, a more robust solution should be implemented
+    else:
+        return None
+
+    # This is a simplification. A more robust solution should consider the specific day of the week.
+    return next_date
