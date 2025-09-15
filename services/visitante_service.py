@@ -16,3 +16,19 @@ def create_visitante(db: Session, visitante: visitante_schema.VisitanteCreate):
     db.commit()
     db.refresh(db_visitante)
     return db_visitante
+
+def update_visitante(db: Session, visitante_id: int, visitante: visitante_schema.VisitanteCreate):
+    db_visitante = get_visitante(db, visitante_id)
+    if db_visitante:
+        for key, value in visitante.dict().items():
+            setattr(db_visitante, key, value)
+        db.commit()
+        db.refresh(db_visitante)
+    return db_visitante
+
+def delete_visitante(db: Session, visitante_id: int):
+    db_visitante = get_visitante(db, visitante_id)
+    if db_visitante:
+        db.delete(db_visitante)
+        db.commit()
+    return db_visitante

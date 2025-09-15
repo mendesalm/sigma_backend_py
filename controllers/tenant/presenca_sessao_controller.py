@@ -30,3 +30,7 @@ def read_presenca_sessao(presenca_sessao_id: int, db: Session = Depends(get_db))
     if db_presenca_sessao is None:
         raise HTTPException(status_code=404, detail="PresencaSessao not found")
     return db_presenca_sessao
+
+@router.put("/presencas/{presenca_sessao_id}", response_model=presenca_sessao_schema.PresencaSessao)
+def update_presenca_sessao(presenca_sessao_id: int, status_presenca: str, db: Session = Depends(get_db)):
+    return presenca_sessao_service.update_presenca_sessao(db=db, presenca_sessao_id=presenca_sessao_id, status_presenca=status_presenca)

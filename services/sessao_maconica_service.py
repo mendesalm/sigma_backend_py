@@ -2,7 +2,7 @@
 
 from sqlalchemy.orm import Session
 from models import models
-from schemas import sessao_maconica_schema, presenca_sessao_schema
+from schemas import sessao_maconica_schema, presenca_sessao_schema, visitante_schema
 
 def get_sessoes(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.SessaoMaconica).offset(skip).limit(limit).all()
@@ -26,3 +26,26 @@ def create_sessao(db: Session, sessao: sessao_maconica_schema.SessaoMaconicaCrea
     db.refresh(db_sessao)
 
     return db_sessao
+
+def update_session_attendance(db: Session, sessao_id: int, attendance_data: list[presenca_sessao_schema.PresencaSessaoBase]):
+    for attendance in attendance_data:
+        db.query(models.PresencaSessao).filter(
+            models.PresencaSessao.id_sessao == sessao_id,
+            models.PresencaSessao.id_membro == attendance.id_membro
+        ).update({"status_presenca": attendance.status_presenca})
+    db.commit()
+    return get_sessao(db, sessao_id)
+
+def manage_session_visitor(db: Session, sessao_id: int, visitor_data: visitante_schema.VisitanteCreate):
+    db_visitor = models.Visitante(**visitor_data.dict(), id_sessao=sessao_id)
+    db.add(db_visitor)
+    db.commit()
+    db.refresh(db_visitor)
+    return db_visitor
+
+def remove_session_visitor(db: Session, visitor_id: int):
+    db_visitor = db.query(models.Visitante).filter(models.Visitante.id == visitor_id).first()
+    if db_visitor:
+        db.delete(db_visitor)
+        db.commit()
+    return db_visitor

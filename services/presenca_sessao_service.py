@@ -16,3 +16,11 @@ def create_presenca_sessao(db: Session, presenca_sessao: presenca_sessao_schema.
     db.commit()
     db.refresh(db_presenca_sessao)
     return db_presenca_sessao
+
+def update_presenca_sessao(db: Session, presenca_sessao_id: int, status_presenca: str):
+    db_presenca = get_presenca_sessao(db, presenca_sessao_id)
+    if db_presenca:
+        db_presenca.status_presenca = status_presenca
+        db.commit()
+        db.refresh(db_presenca)
+    return db_presenca
