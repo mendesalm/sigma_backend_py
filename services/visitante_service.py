@@ -10,13 +10,6 @@ def get_visitantes(db: Session, skip: int = 0, limit: int = 100):
 def get_visitante(db: Session, visitante_id: int):
     return db.query(models.Visitante).filter(models.Visitante.id == visitante_id).first()
 
-def create_visitante(db: Session, visitante: visitante_schema.VisitanteCreate):
-    db_visitante = models.Visitante(**visitante.dict())
-    db.add(db_visitante)
-    db.commit()
-    db.refresh(db_visitante)
-    return db_visitante
-
 def update_visitante(db: Session, visitante_id: int, visitante: visitante_schema.VisitanteCreate):
     db_visitante = get_visitante(db, visitante_id)
     if db_visitante:

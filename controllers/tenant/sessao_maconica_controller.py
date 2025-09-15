@@ -1,6 +1,6 @@
 # backend_python/controllers/tenant/sessao_maconica_controller.py
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from database import connection
 from services import sessao_maconica_service
@@ -37,14 +37,19 @@ def read_sessao(sessao_id: int, db: Session = Depends(get_db)):
 def update_sessa_attendance(sessao_id: int, attendance_data: list[presenca_sessao_schema.PresencaSessaoBase], db: Session = Depends(get_db)):
     return sessao_maconica_service.update_session_attendance(db=db, sessao_id=sessao_id, attendance_data=attendance_data)
 
-@router.post("/sessoes/{sessao_id}/visitors", response_model=visitante_schema.Visitante, dependencies=[Depends(check_attendance_window)])
+@router.post("/sessoes/{sessao_id}/visitors", response_model=presenca_sessao_schema.PresencaSessao, dependencies=[Depends(check_attendance_window)])
 def manage_session_visitor(sessao_id: int, visitor_data: visitante_schema.VisitanteCreate, db: Session = Depends(get_db)):
     return sessao_maconica_service.manage_session_visitor(db=db, sessao_id=sessao_id, visitor_data=visitor_data)
 
-@router.delete("/sessoes/visitors/{visitor_id}")
+@router.delete("/sessoes/visitors/{visitor_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_session_visitor(visitor_id: int, db: Session = Depends(get_db)):
-    return sessao_maconica_service.remove_session_visitor(db=db, visitor_id=visitor_id)
+    sessao_maconica_service.remove_session_visitor(db=db, visitor_id=visitor_id)
+    return None
 
 @router.get("/sessoes/suggest-next-date/{loja_id}", response_model=datetime)
 def suggest_next_session_date(loja_id: int, db: Session = Depends(get_db)):
     return sessao_maconica_service.suggest_next_session_date(db=db, loja_id=loja_id)
+
+@router.put("/sessoes/{sessao_id}/status", response_model=sessao_maconica_schema.SessaoMaconica)
+def update_sessao_status(sessao_id: int, new_status: str, db: Session = Depends(get_db)):
+    return sessao_maconica_service.update_sessao_status(db=db, sessao_id=sessao_id, new_status=new_status)

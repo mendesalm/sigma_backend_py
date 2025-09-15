@@ -92,8 +92,10 @@ O modelo `PresencaSessao` registra a presença de um membro da loja em uma sess�
 
 *   **id**: Identificador único do registro de presença.
 *   **id_sessao**: Chave estrangeira para a sessão.
-*   **id_membro**: Chave estrangeira para o membro.
+*   **id_membro**: Chave estrangeira para o membro (anulável).
+*   **id_visitante**: Chave estrangeira para o visitante (anulável).
 *   **status_presenca**: Status da presença (Presente, Justificado, Ausente).
+*   **data_hora_checkin**: Data e hora do check-in.
 
 ### 2.5. LojaExterna
 
@@ -105,16 +107,52 @@ O modelo `LojaExterna` representa uma loja maçônica que não é cliente do sis
 *   **nome**: Nome da loja externa.
 *   **numero**: Número da loja externa.
 *   **obediencia**: Obediência da loja externa.
+*   **cidade**: Cidade da loja externa.
+*   **pais**: País da loja externa.
 
 ### 2.6. Visitante
 
-O modelo `Visitante` representa um visitante em uma sessão maçônica.
+O modelo `Visitante` representa um visitante.
 
 #### Campos:
 
 *   **id**: Identificador único do visitante.
-*   **id_sessao**: Chave estrangeira para a sessão.
 *   **nome_completo**: Nome completo do visitante.
 *   **email**: Email do visitante.
 *   **telefone**: Telefone do visitante.
+*   **cim**: CIM do visitante.
 *   **id_loja_externa**: Chave estrangeira para a loja externa do visitante.
+
+## 3. Lógica de Agendamento e Status
+
+### 3.1. Sugestão de Data
+
+Um endpoint `GET /api/tenant/sessoes/suggest-next-date/{loja_id}` foi criado para sugerir a data da próxima sessão com base na periodicidade da loja e na data da última sessão. A criação efetiva da sessão permanece manual.
+
+### 3.2. Atualização de Status
+
+Um endpoint `PUT /api/tenant/sessoes/{sessao_id}/status` foi implementado para permitir a atualização manual do status de uma sessão (Agendada, Em Andamento, Realizada, Cancelada).
+
+## 4. Lógica de Registro de Presença
+
+O sistema agora suporta dois fluxos distintos para registro de presença:
+
+### 4.1. Fluxo A (Manual)
+
+Um usuário com permissão adequada pode adicionar/remover registros de presença de membros e visitantes através dos seguintes endpoints:
+
+*   `PUT /api/tenant/sessoes/{sessao_id}/attendance`: Atualiza o status de presença de membros e visitantes.
+*   `POST /api/tenant/sessoes/{sessao_id}/visitors`: Adiciona um novo visitante e registra sua presença na sessão.
+*   `DELETE /api/tenant/sessoes/visitors/{visitor_id}`: Remove um visitante e seu registro de presença.
+
+### 4.2. Fluxo B (Check-in por App)
+
+Um endpoint público `POST /api/checkin` foi criado para ser consumido por um futuro aplicativo móvel. Este endpoint:
+
+*   Recebe a identidade do usuário (via JWT do app) e o ID da loja (via QR Code).
+*   Valida a janela de tempo para registro de presença (2 horas antes e 2 horas depois do início da sessão) através do middleware `check_attendance_window`.
+*   Registra a presença do membro na sessão.
+
+## 5. Geração de QR Code
+
+Um endpoint `GET /api/global/tenants/{loja_id}/qr-code` foi implementado para gerar um QR Code para uma loja específica. O QR Code contém informações essenciais da loja para identificação pelo aplicativo móvel.

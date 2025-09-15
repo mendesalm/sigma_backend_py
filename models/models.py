@@ -232,15 +232,18 @@ class SessaoMaconica(ModeloBase):
 
     loja = relationship("Loja", backref="sessoes")
     presencas = relationship("PresencaSessao", backref="sessao")
-    visitantes = relationship("Visitante", backref="sessao")
 
 class PresencaSessao(ModeloBase):
     __tablename__ = "presencas_sessao"
 
     id = Column(Integer, primary_key=True, index=True)
     id_sessao = Column(Integer, ForeignKey('sessoes_maconicas.id'), nullable=False)
-    id_membro = Column(Integer, ForeignKey('membros_loja.id'), nullable=False)
+    id_membro = Column(Integer, ForeignKey('membros_loja.id'), nullable=True)
+    id_visitante = Column(Integer, ForeignKey('visitantes.id'), nullable=True)
     status_presenca = Column(Enum('Presente', 'Justificado', 'Ausente', name='status_presenca_enum'), nullable=False, default='Ausente')
+    data_hora_checkin = Column(DateTime(timezone=True), nullable=True)
+
+    visitante = relationship("Visitante", backref="presencas")
 
 class LojaExterna(ModeloBase):
     __tablename__ = "lojas_externas"
@@ -249,15 +252,17 @@ class LojaExterna(ModeloBase):
     nome = Column(String(255), nullable=False)
     numero = Column(Integer, nullable=True)
     obediencia = Column(String(255), nullable=True)
+    cidade = Column(String(255), nullable=True)
+    pais = Column(String(255), nullable=True)
 
 class Visitante(ModeloBase):
     __tablename__ = "visitantes"
 
     id = Column(Integer, primary_key=True, index=True)
-    id_sessao = Column(Integer, ForeignKey('sessoes_maconicas.id'), nullable=False)
     nome_completo = Column(String(255), nullable=False)
     email = Column(String(255), nullable=True)
     telefone = Column(String(20), nullable=True)
+    cim = Column(String(20), nullable=True)
     id_loja_externa = Column(Integer, ForeignKey('lojas_externas.id'), nullable=True)
 
     loja_externa = relationship("LojaExterna", backref="visitantes")

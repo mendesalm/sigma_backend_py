@@ -15,7 +15,8 @@ from controllers.global import (
     webmaster_controller,
     role_permission_controller,
     loja_externa_controller,
-    visitante_controller
+    visitante_controller,
+    checkin_controller # Novo
 )
 
 # Importação dos roteadores de tenant
@@ -63,6 +64,7 @@ aplicacao.include_router(webmaster_controller.router, prefix="/webmasters", tags
 aplicacao.include_router(role_permission_controller.router, prefix="/associacoes_cargo_permissao", tags=["Associações Cargo-Permissão"])
 aplicacao.include_router(loja_externa_controller.router, prefix="/api/global/lojas-externas", tags=["Global - Lojas Externas"])
 aplicacao.include_router(visitante_controller.router, prefix="/api/global/visitantes", tags=["Global - Visitantes"])
+aplicacao.include_router(checkin_controller.router, prefix="/api", tags=["Check-in"]) # Novo
 
 # --- Inclusão de Roteadores de Tenant ---
 aplicacao.include_router(auth_controller.router, prefix="/api/tenant/auth", tags=["Tenant - Autenticação"])

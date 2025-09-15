@@ -15,10 +15,6 @@ def get_db():
     finally:
         db.close()
 
-@router.post("/visitantes/", response_model=visitante_schema.Visitante)
-def create_visitante(visitante: visitante_schema.VisitanteCreate, db: Session = Depends(get_db)):
-    return visitante_service.create_visitante(db=db, visitante=visitante)
-
 @router.get("/visitantes/", response_model=list[visitante_schema.Visitante])
 def read_visitantes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     visitantes = visitante_service.get_visitantes(db, skip=skip, limit=limit)

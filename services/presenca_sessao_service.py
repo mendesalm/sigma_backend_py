@@ -3,6 +3,7 @@
 from sqlalchemy.orm import Session
 from models import models
 from schemas import presenca_sessao_schema
+from datetime import datetime
 
 def get_presencas_sessao(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.PresencaSessao).offset(skip).limit(limit).all()
@@ -17,10 +18,12 @@ def create_presenca_sessao(db: Session, presenca_sessao: presenca_sessao_schema.
     db.refresh(db_presenca_sessao)
     return db_presenca_sessao
 
-def update_presenca_sessao(db: Session, presenca_sessao_id: int, status_presenca: str):
+def update_presenca_sessao(db: Session, presenca_sessao_id: int, presenca_update: presenca_sessao_schema.PresencaSessaoBase):
     db_presenca = get_presenca_sessao(db, presenca_sessao_id)
     if db_presenca:
-        db_presenca.status_presenca = status_presenca
+        for key, value in presenca_update.dict(exclude_unset=True).items():
+            setattr(db_presenca, key, value)
+        db_presenca.data_hora_checkin = datetime.now()
         db.commit()
         db.refresh(db_presenca)
     return db_presenca
