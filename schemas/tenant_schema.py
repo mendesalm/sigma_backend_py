@@ -1,64 +1,40 @@
 # backend_python/schemas/tenant_schema.py
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
-from datetime import time
-from enum import Enum
-
-# Re-usando o schema de resposta da classe para aninhamento
-from .lodge_class_schema import LodgeClassResponse
-
-class DiaSessaoEnum(str, Enum):
-    domingo = "Domingo"
-    segunda = "Segunda-feira"
-    terca = "Terça-feira"
-    quarta = "Quarta-feira"
-    quinta = "Quinta-feira"
-    sexta = "Sexta-feira"
-    sabado = "Sábado"
-
-class PeriodicidadeEnum(str, Enum):
-    semanal = "Semanal"
-    quinzenal = "Quinzenal"
-    mensal = "Mensal"
+from datetime import date, time
+from .potencia_schema import PotenciaResponse
 
 class TenantBase(BaseModel):
-    nome_loja: str = Field(..., description="Nome da Loja (Tenant).")
-    codigo_loja: str = Field(..., description="Código único para a Loja.")
-    id_classe: int = Field(..., description="ID da Classe (Potência) à qual a loja pertence.")
-    numero_loja: Optional[str] = None
-    titulo_loja: Optional[str] = None
-    obediencia_loja: Optional[str] = None
-    dominio_personalizado: Optional[str] = None
-    plano: Optional[str] = None
-    limite_usuarios: Optional[int] = None
+    nome_loja: str = Field(..., description="Nome da Loja.")
+    codigo_loja: str = Field(..., description="Código único da Loja.")
+    id_potencia: int = Field(..., description="ID da Potência à qual a loja pertence.")
+    data_fundacao: Optional[date] = None
+    rito: Optional[str] = None
+    cnpj: Optional[str] = Field(None, max_length=18)
+    email: Optional[EmailStr] = None
+    telefone: Optional[str] = Field(None, max_length=20)
+    site: Optional[str] = Field(None, max_length=255)
+    logradouro: Optional[str] = Field(None, max_length=255)
+    numero: Optional[str] = Field(None, max_length=20)
+    complemento: Optional[str] = Field(None, max_length=100)
+    bairro: Optional[str] = Field(None, max_length=100)
+    cidade: Optional[str] = Field(None, max_length=100)
+    estado: Optional[str] = Field(None, max_length=2)
+    cep: Optional[str] = Field(None, max_length=9)
+    # Outros campos de Loja
     esta_ativo: bool = True
-    status: Optional[str] = None
-    dia_sessoes: Optional[DiaSessaoEnum] = None
-    periodicidade: Optional[PeriodicidadeEnum] = None
-    hora_sessao: Optional[time] = None
 
 class TenantCreate(TenantBase):
     pass
 
 class TenantUpdate(BaseModel):
+    # Todos os campos são opcionais na atualização
     nome_loja: Optional[str] = None
-    id_classe: Optional[int] = None
-    numero_loja: Optional[str] = None
-    titulo_loja: Optional[str] = None
-    obediencia_loja: Optional[str] = None
-    dominio_personalizado: Optional[str] = None
-    plano: Optional[str] = None
-    limite_usuarios: Optional[int] = None
-    esta_ativo: Optional[bool] = None
-    status: Optional[str] = None
-    dia_sessoes: Optional[DiaSessaoEnum] = None
-    periodicidade: Optional[PeriodicidadeEnum] = None
-    hora_sessao: Optional[time] = None
+    id_potencia: Optional[int] = None
+    # ... (etc)
 
 class TenantResponse(TenantBase):
     id: int
-    classe: Optional[LodgeClassResponse] = None # Aninhar os dados da classe
-
+    potencia: Optional[PotenciaResponse] = None
     class Config:
         from_attributes = True
