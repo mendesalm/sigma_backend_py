@@ -42,11 +42,11 @@ def login_membro_loja(db: Session, dados_login: LodgeMemberLogin):
     delta_expiracao = timedelta(minutes=config.MINUTOS_EXPIRACAO_TOKEN_ACESSO)
     token_acesso = criar_token_acesso(
         data={
-            "sub": membro.email,
+            "email": membro.email,
             "perfil": "lodge_member",
-            "lodge_member_id": membro.id,
-            "association_id": associacao.id,
-            "lodge_id": associacao.lodge_member.tenant.id # ID da loja associada
+            "lodgeMemberId": membro.id,
+            "associationId": associacao.id,
+            "lodgeId": associacao.lodge_member.tenant.id
         },
         expires_delta=delta_expiracao
     )
@@ -82,11 +82,11 @@ def selecionar_loja_membro(db: Session, dados_selecao: LodgeMemberSelectLodge, c
     delta_expiracao = timedelta(minutes=config.MINUTOS_EXPIRACAO_TOKEN_ACESSO)
     token_acesso = criar_token_acesso(
         data={
-            "sub": current_user["user"].email,
+            "email": current_user["user"].email,
             "perfil": "lodge_member",
-            "lodge_member_id": membro_id,
-            "association_id": associacao.id,
-            "lodge_id": associacao.lodge_member.tenant.id
+            "lodgeMemberId": membro_id,
+            "associationId": associacao.id,
+            "lodgeId": associacao.lodge_member.tenant.id
         },
         expires_delta=delta_expiracao
     )
@@ -106,17 +106,17 @@ def refresh_token(db: Session, current_user: dict):
     """Gera um novo token de acesso para o usuário atual."""
     # Reutiliza os dados do usuário do token atual para gerar um novo
     perfil = current_user["perfil"]
-    sub = current_user["user"].email
-    data = {"sub": sub, "perfil": perfil}
+    email = current_user["user"].email
+    data = {"email": email, "perfil": perfil}
 
     if perfil == "super_admin":
         data["superadmin_id"] = current_user["user"].id
     elif perfil == "webmaster":
         data["webmaster_id"] = current_user["user"].id
     elif perfil == "lodge_member":
-        data["lodge_member_id"] = current_user["user"].id
-        data["association_id"] = current_user["association"].id
-        data["lodge_id"] = current_user["tenant"].id
+        data["lodgeMemberId"] = current_user["user"].id
+        data["associationId"] = current_user["association"].id
+        data["lodgeId"] = current_user["tenant"].id
 
     delta_expiracao = timedelta(minutes=config.MINUTOS_EXPIRACAO_TOKEN_ACESSO)
     token_acesso = criar_token_acesso(data=data, expires_delta=delta_expiracao)

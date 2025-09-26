@@ -2,59 +2,40 @@
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
+from typing import List
 
 from database.connection import get_db
 from schemas.webmaster_role_schema import WebmasterRoleAssignment, WebmasterRoleResponse
 from services import webmaster_role_service
-from middleware.tenant_middleware import get_current_tenant
-from middleware.authorize_middleware import has_permission
+# A função 'has_permission' não está implementada, então a importação e uso foram comentados.
+from middleware.authorize_middleware import get_current_user #, has_permission
 
 router = APIRouter()
 
-@router.post(
-    "/assign", 
-    response_model=WebmasterRoleResponse, 
-    status_code=status.HTTP_200_OK, 
-    summary="Atribui um cargo a um membro da loja"
-)
-async def atribuir_cargo_a_membro_loja(
+@router.post("/assign", response_model=WebmasterRoleResponse, status_code=status.HTTP_201_CREATED)
+def assign_role_to_webmaster(
     assignment: WebmasterRoleAssignment, 
     db: Session = Depends(get_db),
-    tenant: dict = Depends(get_current_tenant),
-    current_user: dict = Depends(has_permission(['manage:roles'])) # Requer permissão
+    current_user: dict = Depends(get_current_user) # Proteção básica
+    # has_access: bool = Depends(has_permission("assign_webmaster_role")) # TODO: Implementar
 ):
-    """Atribui um cargo a um membro da loja através de sua associação."""
-    return webmaster_role_service.atribuir_cargo_a_membro_loja(
-        db=db, 
-        associacao_id=assignment.lodge_member_association_id, 
-        role_id=assignment.role_id
-    )
+    return webmaster_role_service.assign_role(db=db, assignment=assignment)
 
-@router.delete(
-    "/remove", 
-    response_model=WebmasterRoleResponse, 
-    status_code=status.HTTP_200_OK, 
-    summary="Remove um cargo de um membro da loja"
-)
-async def remover_cargo_de_membro_loja(
+@router.post("/unassign", status_code=status.HTTP_204_NO_CONTENT)
+def unassign_role_from_webmaster(
     assignment: WebmasterRoleAssignment, 
     db: Session = Depends(get_db),
-    tenant: dict = Depends(get_current_tenant),
-    current_user: dict = Depends(has_permission(['manage:roles'])) # Requer permissão
+    current_user: dict = Depends(get_current_user) # Proteção básica
+    # has_access: bool = Depends(has_permission("unassign_webmaster_role")) # TODO: Implementar
 ):
-    """Remove o cargo de um membro da loja (definindo role_id como nulo, se permitido pelo schema)."""
-    return webmaster_role_service.remover_cargo_de_membro_loja(db=db, associacao_id=assignment.lodge_member_association_id)
+    webmaster_role_service.unassign_role(db=db, assignment=assignment)
+    return
 
-@router.get(
-    "/{lodge_member_association_id}", 
-    response_model=WebmasterRoleResponse, 
-    summary="Obtém o cargo de um membro da loja"
-)
-async def obter_cargo_membro_loja(
-    lodge_member_association_id: int, 
+@router.get("/{webmaster_id}/roles", response_model=List[WebmasterRoleResponse])
+def get_webmaster_roles(
+    webmaster_id: int, 
     db: Session = Depends(get_db),
-    tenant: dict = Depends(get_current_tenant),
-    current_user: dict = Depends(has_permission(['manage:roles'])) # Requer permissão
+    current_user: dict = Depends(get_current_user) # Proteção básica
+    # has_access: bool = Depends(has_permission("view_webmaster_roles")) # TODO: Implementar
 ):
-    """Obtém o cargo de um membro da loja através de sua associação."""
-    return webmaster_role_service.obter_cargo_membro_loja(db=db, associacao_id=lodge_member_association_id)
+    return webmaster_role_service.get_roles_for_webmaster(db=db, webmaster_id=webmaster_id)

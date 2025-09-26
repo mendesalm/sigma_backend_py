@@ -36,14 +36,17 @@ async def login_super_admin(
     """Autentica um super administrador e retorna um token de acesso JWT.""" 
     super_admin = db.query(SuperAdministrador).filter(SuperAdministrador.email == dados_login.email).first()
 
-    if not super_admin or not bcrypt.checkpw(dados_login.senha.encode('utf-8'), super_admin.senha_hash.encode('utf-8')):
+    if not super_admin or not bcrypt.checkpw(dados_login.password.encode('utf-8'), super_admin.senha_hash.encode('utf-8')):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email ou senha inválidos.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    delta_expiracao = timedelta(minutes=config.MINUTOS_EXPIRACAO_TOKEN_ACESSO)
+    # CORRIGIDO: Usa a variável de configuração correta (EXPIRACAO_JWT)
+    exp_hours = int(config.EXPIRACAO_JWT.replace('h', ''))
+    delta_expiracao = timedelta(hours=exp_hours)
+    
     token_data = {
         "perfil": "super_admin",
         "superadmin_id": super_admin.id
@@ -72,7 +75,7 @@ async def criar_super_admin(
             detail="Um super administrador com este email já existe."
         )
 
-    senha_hash = bcrypt.hashpw(dados_registro.senha.encode('utf-8'), bcrypt.gensalt())
+    senha_hash = bcrypt.hashpw(dados_registro.password.encode('utf-8'), bcrypt.gensalt())
 
     novo_super_admin = SuperAdministrador(
         nome_usuario=dados_registro.nome_usuario,
@@ -105,7 +108,7 @@ async def registrar_super_admin_inicial(
             detail="Um super administrador já existe. Não é possível registrar outro."
         )
 
-    senha_hash = bcrypt.hashpw(dados_registro.senha.encode('utf-8'), bcrypt.gensalt())
+    senha_hash = bcrypt.hashpw(dados_registro.password.encode('utf-8'), bcrypt.gensalt())
 
     novo_super_admin = SuperAdministrador(
         nome_usuario=dados_registro.nome_usuario,
@@ -170,9 +173,9 @@ async def atualizar_super_admin(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="O SuperAdmin principal não pode ser desativado.")
 
     update_data = dados_atualizacao.model_dump(exclude_unset=True)
-    if "senha" in update_data and update_data["senha"]:
-        update_data["senha_hash"] = bcrypt.hashpw(update_data["senha"].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        del update_data["senha"]
+    if "password" in update_data and update_data["password"]:
+        update_data["senha_hash"] = bcrypt.hashpw(update_data["password"].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        del update_data["password"]
     
     for key, value in update_data.items():
         setattr(super_admin, key, value)

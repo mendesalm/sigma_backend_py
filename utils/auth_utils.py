@@ -13,6 +13,10 @@ def criar_token_acesso(data: dict, expires_delta: Optional[timedelta] = None):
         expira_em = datetime.now(timezone.utc) + expires_delta
     else:
         expira_em = datetime.now(timezone.utc) + timedelta(minutes=15)
+    
     a_codificar.update({"exp": expira_em})
-    token_jwt_codificado = jwt.encode(a_codificar, config.SEGREDO_JWT, algorithm=config.ALGORITMO)
+    
+    # CORRIGIDO: Usa o algoritmo padrão e seguro "HS256" diretamente.
+    token_jwt_codificado = jwt.encode(a_codificar, config.SEGREDO_JWT, algorithm="HS256")
+    
     return token_jwt_codificado

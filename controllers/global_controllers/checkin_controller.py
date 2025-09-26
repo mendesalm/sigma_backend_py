@@ -3,11 +3,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from database import connection
-from services import sessao_maconica_service, auth_service
+from services import sessao_maconica_service
 from schemas import presenca_sessao_schema
 from middleware.attendance_middleware import check_attendance_window
 from models import models # Import models
 from datetime import datetime
+from middleware import authorize_middleware # Importar o middleware de autorização
 
 router = APIRouter()
 
@@ -22,7 +23,7 @@ def get_db():
 async def checkin(
     loja_id: int, 
     db: Session = Depends(get_db),
-    current_user: dict = Depends(auth_service.get_current_active_user) # Assuming this returns a dict with user info
+    current_user: dict = Depends(authorize_middleware.get_current_user) # Usar o get_current_user do middleware
 ):
     # This is a simplified implementation. More robust logic is needed.
     # It should check if the user is a member or a visitor.
@@ -38,7 +39,7 @@ async def checkin(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active session found for this lodge.")
 
     # Assuming current_user contains id_membro
-    id_membro = current_user.get("id") # Adjust based on actual user object structure
+    id_membro = current_user.get("user").id # Adjust based on actual user object structure
 
     # Check if attendance already exists for this member in this session
     existing_presenca = db.query(models.PresencaSessao).filter(

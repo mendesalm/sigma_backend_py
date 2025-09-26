@@ -3,6 +3,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from pydantic_settings import SettingsConfigDict
 
 class PresencaSessaoBase(BaseModel):
     id_membro: Optional[int] = None
@@ -17,5 +18,4 @@ class PresencaSessao(PresencaSessaoBase):
     id: int
     id_sessao: int
 
-    class Config:
-        orm_mode = True
+    model_config = SettingsConfigDict(from_attributes=True)

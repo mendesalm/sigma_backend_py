@@ -1,14 +1,14 @@
 # backend_python/services/role_service.py
 
 from sqlalchemy.orm import Session
-from models.models import Cargo, ClasseLoja
+from models.models import Cargo, Classe
 from schemas.role_schema import RoleCreate, RoleUpdate
 from fastapi import HTTPException, status
 
 def criar_cargo(db: Session, cargo: RoleCreate):
     """Cria um novo cargo no banco de dados."""
     if cargo.lodge_class_id:
-        classe_loja = db.query(ClasseLoja).filter(ClasseLoja.id == cargo.lodge_class_id).first()
+        classe_loja = db.query(Classe).filter(Classe.id == cargo.lodge_class_id).first()
         if not classe_loja:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Classe de Loja não encontrada.")
 
@@ -34,7 +34,7 @@ def atualizar_cargo(db: Session, cargo_id: int, cargo_atualizacao: RoleUpdate):
     db_cargo = obter_cargo_por_id(db, cargo_id)
     
     if cargo_atualizacao.lodge_class_id:
-        classe_loja = db.query(ClasseLoja).filter(ClasseLoja.id == cargo_atualizacao.lodge_class_id).first()
+        classe_loja = db.query(Classe).filter(Classe.id == cargo_atualizacao.lodge_class_id).first()
         if not classe_loja:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Classe de Loja não encontrada.")
 

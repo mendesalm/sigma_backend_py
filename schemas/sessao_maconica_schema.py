@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List
 from schemas.presenca_sessao_schema import PresencaSessao # Importa o modelo atualizado
+from pydantic_settings import SettingsConfigDict
 
 class SessaoMaconicaBase(BaseModel):
     data_sessao: datetime
@@ -22,5 +23,4 @@ class SessaoMaconica(SessaoMaconicaBase):
     id_loja: int
     presencas: List[PresencaSessao] = []
 
-    class Config:
-        orm_mode = True
+    model_config = SettingsConfigDict(from_attributes=True)

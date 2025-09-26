@@ -1,43 +1,64 @@
 # backend_python/schemas/tenant_schema.py
 
-from pydantic import BaseModel, Field, EmailStr
-from typing import Optional, Dict, Any, List
-from datetime import datetime, time
+from pydantic import BaseModel, Field
+from typing import Optional
+from datetime import time
+from enum import Enum
+
+# Re-usando o schema de resposta da classe para aninhamento
+from .lodge_class_schema import LodgeClassResponse
+
+class DiaSessaoEnum(str, Enum):
+    domingo = "Domingo"
+    segunda = "Segunda-feira"
+    terca = "Terça-feira"
+    quarta = "Quarta-feira"
+    quinta = "Quinta-feira"
+    sexta = "Sexta-feira"
+    sabado = "Sábado"
+
+class PeriodicidadeEnum(str, Enum):
+    semanal = "Semanal"
+    quinzenal = "Quinzenal"
+    mensal = "Mensal"
 
 class TenantBase(BaseModel):
-    codigo_loja: str = Field(..., min_length=3, max_length=32, description="Código único da loja.")
-    numero_loja: Optional[str] = Field(None, max_length=255)
-    nome_loja: Optional[str] = Field(None, max_length=255)
-    titulo_loja: Optional[str] = Field(None, max_length=255)
-    obediencia_loja: Optional[str] = Field(None, max_length=255)
-    id_classe_loja: Optional[int] = Field(None, description="ID da classe de loja.")
-    dominio_personalizado: Optional[str] = Field(None, max_length=255)
-    plano: Optional[str] = Field("basic", max_length=255)
-    limite_usuarios: Optional[int] = Field(20)
-    configuracoes_globais: Optional[Dict[str, Any]] = Field({}, description="Configurações globais em formato JSON.")
-    chaves_api: Optional[Dict[str, Any]] = Field({}, description="Chaves de API em formato JSON.")
-    esta_ativo: Optional[bool] = Field(True)
-    status: Optional[str] = Field(None, max_length=255)
-    dia_sessoes: Optional[str] = Field(None, description="Dia da semana das sessões.")
-    periodicidade: Optional[str] = Field(None, description="Periodicidade das sessões.")
-    hora_sessao: Optional[time] = Field(None, description="Hora das sessões.")
+    nome_loja: str = Field(..., description="Nome da Loja (Tenant).")
+    codigo_loja: str = Field(..., description="Código único para a Loja.")
+    id_classe: int = Field(..., description="ID da Classe (Potência) à qual a loja pertence.")
+    numero_loja: Optional[str] = None
+    titulo_loja: Optional[str] = None
+    obediencia_loja: Optional[str] = None
+    dominio_personalizado: Optional[str] = None
+    plano: Optional[str] = None
+    limite_usuarios: Optional[int] = None
+    esta_ativo: bool = True
+    status: Optional[str] = None
+    dia_sessoes: Optional[DiaSessaoEnum] = None
+    periodicidade: Optional[PeriodicidadeEnum] = None
+    hora_sessao: Optional[time] = None
 
 class TenantCreate(TenantBase):
-    # Para criação, o código da loja é obrigatório
-    codigo_loja: str = Field(..., min_length=3, max_length=32, description="Código único da loja.")
-    # Campos adicionais para o onboarding
-    email_webmaster: EmailStr = Field(..., description="Email do webmaster inicial.")
-    senha_webmaster: str = Field(..., min_length=8, description="Senha do webmaster inicial.")
-    superior_lodges: Optional[List[int]] = Field([], description="Lista de IDs de lojas superiores na hierarquia.")
+    pass
 
-class TenantUpdate(TenantBase):
-    # Todos os campos são opcionais para atualização
-    codigo_loja: Optional[str] = Field(None, min_length=3, max_length=32, description="Código único da loja.")
+class TenantUpdate(BaseModel):
+    nome_loja: Optional[str] = None
+    id_classe: Optional[int] = None
+    numero_loja: Optional[str] = None
+    titulo_loja: Optional[str] = None
+    obediencia_loja: Optional[str] = None
+    dominio_personalizado: Optional[str] = None
+    plano: Optional[str] = None
+    limite_usuarios: Optional[int] = None
+    esta_ativo: Optional[bool] = None
+    status: Optional[str] = None
+    dia_sessoes: Optional[DiaSessaoEnum] = None
+    periodicidade: Optional[PeriodicidadeEnum] = None
+    hora_sessao: Optional[time] = None
 
 class TenantResponse(TenantBase):
     id: int
-    criado_em: datetime
-    atualizado_em: Optional[datetime] = None
+    classe: Optional[LodgeClassResponse] = None # Aninhar os dados da classe
 
     class Config:
-        from_attributes = True # Permite que o modelo seja criado a partir de atributos de objeto (ORM)
+        from_attributes = True

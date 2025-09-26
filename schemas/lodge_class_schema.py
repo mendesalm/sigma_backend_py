@@ -2,22 +2,24 @@
 
 from pydantic import BaseModel, Field
 from typing import Optional
-from datetime import datetime
 
+# Propriedades básicas compartilhadas
 class LodgeClassBase(BaseModel):
-    nome: str = Field(..., min_length=3, max_length=255)
-    descricao: Optional[str] = Field(None, max_length=255)
+    nome: str = Field(..., min_length=3, max_length=100, description="Nome da Classe (Potência)")
+    descricao: Optional[str] = Field(None, max_length=255, description="Descrição da Classe")
 
+# Schema para a criação de uma Classe
 class LodgeClassCreate(LodgeClassBase):
     pass
 
-class LodgeClassUpdate(LodgeClassBase):
-    nome: Optional[str] = Field(None, min_length=3, max_length=255)
+# Schema para a atualização de uma Classe
+class LodgeClassUpdate(BaseModel):
+    nome: Optional[str] = Field(None, min_length=3, max_length=100)
+    descricao: Optional[str] = Field(None, max_length=255)
 
+# Schema para a resposta da API (visualização)
 class LodgeClassResponse(LodgeClassBase):
     id: int
-    criado_em: datetime
-    atualizado_em: Optional[datetime] = None
 
     class Config:
-        from_attributes = True # Permite que o modelo seja criado a partir de atributos de objeto (ORM)
+        from_attributes = True

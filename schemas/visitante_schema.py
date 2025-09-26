@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel
 from typing import Optional
+from pydantic_settings import SettingsConfigDict
 
 class VisitanteBase(BaseModel):
     nome_completo: str
@@ -16,5 +17,4 @@ class VisitanteCreate(VisitanteBase):
 class Visitante(VisitanteBase):
     id: int
 
-    class Config:
-        orm_mode = True
+    model_config = SettingsConfigDict(from_attributes=True)

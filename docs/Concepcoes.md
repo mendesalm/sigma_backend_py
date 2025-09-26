@@ -4,84 +4,52 @@ Este documento serve como um registro vivo do planejamento e das decisões de de
 
 ---
 
-## **Em Andamento: Gerenciamento de Sessões Maçônicas**
+## Refatoração do Frontend para Backend Python e Nova Estilização
 
-**Objetivo:** Implementar um sistema completo para agendamento, gerenciamento e registro histórico de sessões maçônicas, incluindo o registro de presença de membros e visitantes.
+**Objetivo:** Adaptar o frontend existente para consumir a API do `backend_python` e integrar um novo padrão de estilização.
 
-### 1. Análise e Decisões de Design
+### Resumo do Trabalho Realizado:
 
-Com base nos requisitos, as seguintes decisões de design foram tomadas:
+Uma refatoração extensiva foi realizada nas principais páginas do frontend para garantir a comunicação correta com o novo backend Python. As seguintes melhorias foram implementadas:
 
-#### 1.1. Modelos de Dados
+1.  **Centralização da Comunicação API:** Foi criada uma instância centralizada do `axios` (`apiClient`) em `frontend/src/api/axiosConfig.ts`. Esta instância é responsável por:
+    *   Definir a URL base da API (`http://localhost:8000`).
+    *   Incluir automaticamente o token de autenticação (JWT) em todas as requisições, obtido do `localStorage`.
+    *   Simplificar as chamadas de API em todo o frontend.
 
-Serão introduzidos os seguintes novos modelos no arquivo `models/models.py`:
+2.  **Contexto de Autenticação Unificado:** O contexto de autenticação (`frontend/src/contexto/ContextoAutenticacao.tsx`) foi padronizado e utilizado em todas as páginas relevantes para gerenciar o estado de autenticação do usuário (`token`, `usuario`, `perfil`).
 
-- **`SessaoMaconica`**: A entidade central desta funcionalidade.
-    - **Campos:** `id_loja` (FK para `lojas`), `data_hora_inicio`, `status` (ENUM: `Agendada`, `Em Andamento`, `Realizada`, `Cancelada`), `tipo` (ENUM: `Ordinária`, `Magna`, `Extraordinária`), `subtipo` (String, para acomodar a variedade de subtipos).
+3.  **Integração de Nova Estilização:** Um novo padrão de design, baseado em variáveis CSS, foi integrado ao projeto. Isso incluiu:
+    *   Atualização do `frontend/src/index.css` com variáveis CSS para cores, tipografia e layout, suportando temas claro e escuro.
+    *   Modificação do `frontend/src/theme.ts` para criar um tema Material-UI (`sigmaTheme`) que consome essas variáveis CSS, garantindo que os componentes Material-UI sigam o novo design.
+    *   Aplicação do `ThemeProvider` e `CssBaseline` em `frontend/src/App.tsx` para garantir a consistência visual em toda a aplicação.
 
-- **`LojaExterna`**: Tabela para armazenar lojas não-clientes do sistema, cujos membros podem visitar sessões (`banco_de_lojas`).
-    - **Campos:** `nome_loja`, `obediencia`, `cidade`, `pais`.
+4.  **Páginas Refatoradas:** As seguintes páginas foram completamente refatoradas para consumir a nova API e aplicar a nova estilização:
+    *   `Login.tsx` (Login de Super Admin)
+    *   `LojasPage.tsx` (Gerenciamento Global de Lojas)
+    *   `CargosPage.tsx` (Gerenciamento Global de Cargos)
+    *   `PermissoesPage.tsx` (Gerenciamento Global de Permissões)
+    *   `CargosPermissoesPage.tsx` (Associação Global Cargo-Permissão)
+    *   `ClassesLojasPage.tsx` (Gerenciamento Global de Classes de Loja)
+    *   `DashboardPage.tsx` (Dashboard de Super Admin Global)
+    *   `RegistroMembroPage.tsx` (Registro de Membros por Tenant)
+    *   `AtribuicaoCargosWebmasterPage.tsx` (Atribuição de Cargos para Membros por Tenant)
+    *   `ProcessosAdministrativosPage.tsx` (Processos Administrativos por Tenant)
 
-- **`Visitante`**: Tabela para o cadastro de maçons de lojas não-clientes (`banco_de_visitantes`).
-    - **Campos:** `nome_completo`, `email`, `cim`, `id_loja_externa` (FK para `lojas_externas`).
+### Limitações Identificadas e Propostas de Solução:
 
-- **`PresencaSessao`**: Tabela de associação para registrar a presença em uma sessão.
-    - **Campos:** `id_sessao` (FK para `sessoes_maconicas`), `id_membro` (FK para `membros_loja`, anulável), `id_visitante` (FK para `visitantes`, anulável), `data_hora_checkin`.
+Durante a refatoração, algumas limitações na comunicação entre frontend e backend foram identificadas, principalmente relacionadas à atribuição de cargos:
 
-#### 1.2. Lógica de Agendamento e Status
+1.  **Atribuição Inicial de Cargos:**
+    *   **Limitação:** O endpoint `POST /webmaster/atribuicao-cargos/assign` do backend espera o ID de uma associação de membro-cargo existente (`lodge_member_association_id`) para atualizar um cargo. Ele não permite a criação da *primeira* associação de cargo para um membro que ainda não possui nenhum cargo registrado.
+    *   **Solução Proposta (Backend):** Recomenda-se a criação de um novo endpoint no backend, por exemplo, `POST /webmaster/atribuicao-cargos/atribuir-primeiro-cargo`, que aceite o `id_membro` e o `id_cargo` e crie a primeira entrada no histórico de cargos para o membro. Alternativamente, o endpoint `assign` poderia ser modificado para lidar com ambos os cenários.
 
-- **Sugestão de Data:** Será criado um endpoint (`GET /api/tenant/sessoes/sugerir-proxima`) que usará os campos `periodicidade` e `dia_sessoes` da tabela `lojas`, em conjunto com a data da última sessão registrada, para sugerir a data da próxima sessão. A criação efetiva será manual.
-- **Atualização de Status:** A atualização do status da sessão (de `Agendada` para `Em Andamento`, etc.) será, inicialmente, uma ação manual realizada através de um endpoint da API (`PUT /api/tenant/sessoes/{id}/status`).
-    - **Nota Arquitetural:** A automação por tarefas agendadas (scheduler) é uma melhoria futura e não será implementada neste ciclo para manter o escopo gerenciável.
-
-#### 1.3. Lógica de Registro de Presença
-
-O sistema suportará dois fluxos distintos:
-
-- **Fluxo A (Manual):** Um usuário com a permissão `sessao:gerenciar_presenca` (ex: Chanceler) poderá adicionar/remover registros de presença de membros e visitantes através de endpoints específicos.
-- **Fluxo B (Check-in por App):** Será criado um endpoint público (`POST /api/checkin`) para ser consumido por um futuro aplicativo móvel. Este endpoint receberá a identidade do usuário (via JWT do app) e o ID da loja (via QR Code), validará a janela de tempo (2h antes/depois do início da sessão) e registrará a presença.
-
-#### 1.4. Permissões (RBAC)
-
-Serão criadas novas ações na tabela `permissoes` para controlar o acesso a esta funcionalidade. Exemplos:
-- `sessao:criar`: Permite agendar novas sessões.
-- `sessao:gerenciar`: Permite editar, cancelar ou deletar sessões.
-- `sessao:gerenciar_presenca`: Permite manipular a lista de presença manualmente.
-
-### 2. Plano de Implementação Técnica (Passo a Passo)
-
-O desenvolvimento seguirá as fases detalhadas abaixo:
-
-#### **Fase 3.1: Modelos de Dados e Migração**
-1.  **Ação:** Adicionar as classes `SessaoMaconica`, `LojaExterna`, `Visitante` e `PresencaSessao` ao `models/models.py`.
-2.  **Ação:** Gerar um novo script de migração com Alembic: `alembic revision --autogenerate -m "Adiciona modelos para gestao de sessoes maconicas"`.
-3.  **Ação:** Aplicar a migração ao banco de dados: `alembic upgrade head`.
-4.  **Checkpoint:** Commit com a mensagem `feat: Adiciona modelos de dados para sessoes maconicas`.
-
-#### **Fase 3.2: Schemas, Serviços e Endpoints (CRUD Básico)**
-1.  **Ação:** Criar os schemas Pydantic, serviços e controllers para o CRUD básico de `SessaoMaconica`.
-2.  **Ação:** Implementar o endpoint de sugestão de data (`GET /sugerir-proxima`).
-3.  **Ação:** Implementar o endpoint de atualização de status (`PUT /{id}/status`).
-4.  **Checkpoint:** Commit com a mensagem `feat: Implementa CRUD basico e logica de agendamento de sessoes`.
-
-#### **Fase 3.3: Implementação do Cadastro de Visitantes**
-1.  **Ação:** Criar schemas, serviços e controllers para o CRUD de `LojaExterna` e `Visitante`.
-2.  **Checkpoint:** Commit com a mensagem `feat: Implementa cadastro de visitantes e lojas externas`.
-
-#### **Fase 3.4: Implementação do Registro de Presença**
-1.  **Ação:** Implementar os endpoints para o registro manual de presença (Fluxo A).
-2.  **Ação:** Implementar o endpoint e a lógica para o check-in via QR Code (Fluxo B).
-3.  **Checkpoint:** Commit com a mensagem `feat: Implementa logica e endpoints para registro de presenca`.
-
-#### **Fase 3.5: Finalização e Documentação**
-1.  **Ação:** Revisar toda a funcionalidade e adicionar as novas permissões ao sistema.
-2.  **Ação:** # Documento de Concepção: Funcionalidades em Desenvolvimento
-
-Este documento serve como um registro vivo do planejamento e das decisões de design para as funcionalidades que estão sendo implementadas. Uma vez que uma funcionalidade é concluída, sua documentação é movida daqui para o `MANUAL_TECNICO.md`.
+2.  **Consulta de Diretorias por Período:**
+    *   **Limitação:** Atualmente, não há um endpoint dedicado no backend para consultar a composição de diretorias por um período específico.
+    *   **Solução Proposta (Backend):** Recomenda-se a criação de um novo endpoint, por exemplo, `GET /api/tenant/diretorias`, que aceite `data_inicio` e `data_fim` como parâmetros e retorne os membros que ocuparam cargos nesse período. Este endpoint faria a lógica de consulta no `HistoricoCargo` e agregaria as informações necessárias.
 
 ---
 
 ## Próxima Funcionalidade: (A ser definido)
 
-3.  **Ação:** Limpar esta seção do `Concepcoes.md`.
-4.  **Checkpoint:** Commit com a mensagem `docs: Atualiza manual tecnico com gestao de sessoes`.
+Com a refatoração do frontend concluída e as principais funcionalidades adaptadas, o sistema está pronto para novas implementações ou refinamentos.

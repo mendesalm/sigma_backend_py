@@ -4,6 +4,7 @@ import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 from typing import Literal, Union, List
+from urllib.parse import quote_plus  # <-- IMPORTAÇÃO ADICIONADA
 
 class Configuracoes(BaseSettings):
     """
@@ -24,7 +25,6 @@ class Configuracoes(BaseSettings):
     )
 
     # --- Banco de Dados ---
-    # O nome do banco de dados foi alterado para sigma_data, conforme solicitado.
     NOME_BANCO_DE_DADOS: str = Field(
         default="sigma_data", 
         alias="DB_GLOBAL_NAME",
@@ -52,6 +52,10 @@ class Configuracoes(BaseSettings):
         description="Duração da validade de um token JWT (ex: '24h', '60m')."
     )
 
+    # --- Credenciais do Super Admin (para o script seed_db.py) ---
+    ROOT_EMAIL: str = Field(alias="ROOT_EMAIL", description="E-mail para o usuário root/superadmin.")
+    ROOT_PASSWORD: str = Field(alias="ROOT_PASSWORD", description="Senha para o usuário root/superadmin.")
+
     # --- Logs ---
     NIVEL_LOG: Literal["error", "warn", "info", "debug"] = Field(
         default="info", 
@@ -76,7 +80,7 @@ class Configuracoes(BaseSettings):
         description="Origens permitidas para requisições CORS."
     )
 
-        # --- Configurações de Email ---
+    # --- Configurações de Email ---
     EMAIL_HOST: str = Field(..., description="Host do servidor de e-mail SMTP.")
     EMAIL_PORT: int = Field(..., description="Porta do servidor de e-mail SMTP.")
     EMAIL_USER: str = Field(..., description="Usuário do e-mail para autenticação SMTP.")
@@ -85,10 +89,13 @@ class Configuracoes(BaseSettings):
 
     @property
     def URL_BANCO_DE_DADOS(self) -> str:
-        """Monta a URL de conexão do banco de dados a partir das configurações."""
-        # O dialeto para MySQL com PyMySQL é 'mysql+pymysql'
-        dialeto_driver = f"{self.DIALETO_BANCO_DE_DADOS}+pymysql"
-        return f"{dialeto_driver}://{self.USUARIO_BANCO_DE_DADOS}:{self.SENHA_BANCO_DE_DADOS}@{self.HOST_BANCO_DE_DADOS}:{self.PORTA_BANCO_DE_DADOS}/{self.NOME_BANCO_DE_DADOS}"
+        """Monta a URL de conexão do banco de dados a partir das configurações, tratando caracteres especiais na senha."""
+        # URL-encode a senha para garantir que caracteres como '@' não quebrem a string de conexão
+        senha_encoded = quote_plus(self.SENHA_BANCO_DE_DADOS)
+        return (f"{self.DIALETO_BANCO_DE_DADOS}+pymysql://"
+                f"{self.USUARIO_BANCO_DE_DADOS}:{senha_encoded}"
+                f"@{self.HOST_BANCO_DE_DADOS}:{self.PORTA_BANCO_DE_DADOS}"
+                f"/{self.NOME_BANCO_DE_DADOS}")
 
     # Configuração para carregar do arquivo .env
     _env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
@@ -97,7 +104,3 @@ class Configuracoes(BaseSettings):
 
 # Instância única das configurações para ser usada em toda a aplicação
 config = Configuracoes()
-
-# Para teste rápido, você pode descomentar a linha abaixo
-# print(config.model_dump_json(indent=2))
-

@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel
 from typing import Optional
+from pydantic_settings import SettingsConfigDict
 
 class LojaExternaBase(BaseModel):
     nome: str
@@ -14,5 +15,4 @@ class LojaExternaCreate(LojaExternaBase):
 class LojaExterna(LojaExternaBase):
     id: int
 
-    class Config:
-        orm_mode = True
+    model_config = SettingsConfigDict(from_attributes=True)
